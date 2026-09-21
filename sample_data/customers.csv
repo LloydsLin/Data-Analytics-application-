@@ -1,0 +1,101 @@
+Customer_ID,Customer_Name,Segment,Country,City,Region_State,Signup_Date
+CUST-0001,Customer 001 Ltd,Corporate,United Kingdom,Glasgow,Scotland,2022-09-08
+CUST-0002,Person 002,Small Business,United Kingdom,Manchester,Greater Manchester,2023-11-24
+CUST-0003,Customer 003 Ltd,Small Business,United Kingdom,Manchester,Greater Manchester,2023-08-28
+CUST-0004,Customer 004 Ltd,Corporate,United Kingdom,Manchester,Greater Manchester,2022-08-12
+CUST-0005,Person 005,Small Business,United Kingdom,London,Greater London,2023-07-29
+CUST-0006,Person 006,Small Business,United Kingdom,Edinburgh,Scotland,2022-08-14
+CUST-0007,Customer 007 Ltd,Consumer,United Kingdom,London,Greater London,2022-06-13
+CUST-0008,Customer 008 Ltd,Consumer,United Kingdom,Glasgow,Scotland,2022-06-09
+CUST-0009,Person 009,Consumer,United Kingdom,Manchester,Greater Manchester,2022-04-05
+CUST-0010,Person 010,Consumer,United Kingdom,Bristol,South West,2023-09-11
+CUST-0011,Person 011,Corporate,United Kingdom,Liverpool,North West,2023-07-04
+CUST-0012,Person 012,Consumer,United Kingdom,Manchester,Greater Manchester,2023-07-20
+CUST-0013,Person 013,Small Business,United Kingdom,Bristol,South West,2023-08-15
+CUST-0014,Person 014,Corporate,United Kingdom,London,Greater London,2023-11-09
+CUST-0015,Person 015,Consumer,United Kingdom,Manchester,Greater Manchester,2022-08-27
+CUST-0016,Customer 016 Ltd,Consumer,United Kingdom,Glasgow,Scotland,2023-04-10
+CUST-0017,Customer 017 Ltd,Consumer,United Kingdom,Birmingham,West Midlands,2023-01-15
+CUST-0018,Person 018,Small Business,United Kingdom,Glasgow,Scotland,2023-12-01
+CUST-0019,Customer 019 Ltd,Small Business,United Kingdom,Birmingham,West Midlands,2023-07-01
+CUST-0020,Customer 020 Ltd,Corporate,United Kingdom,Liverpool,North West,2023-01-24
+CUST-0021,Person 021,Small Business,United Kingdom,Leeds,West Yorkshire,2022-11-29
+CUST-0022,Customer 022 Ltd,Corporate,United Kingdom,Leeds,West Yorkshire,2022-02-02
+CUST-0023,Customer 023 Ltd,Consumer,United Kingdom,Glasgow,Scotland,2022-03-09
+CUST-0024,Person 024,Small Business,United Kingdom,Bristol,South West,2022-08-06
+CUST-0025,Customer 025 Ltd,Consumer,United Kingdom,Liverpool,North West,2022-05-27
+CUST-0026,Person 026,Corporate,United Kingdom,Glasgow,Scotland,2023-08-22
+CUST-0027,Customer 027 Ltd,Small Business,United Kingdom,Edinburgh,Scotland,2023-01-06
+CUST-0028,Person 028,Corporate,United Kingdom,Liverpool,North West,2022-04-04
+CUST-0029,Customer 029 Ltd,Corporate,United Kingdom,Birmingham,West Midlands,2023-10-05
+CUST-0030,Person 030,Small Business,United Kingdom,Edinburgh,Scotland,2023-09-03
+CUST-0031,Person 031,Consumer,United Kingdom,Liverpool,North West,2023-06-26
+CUST-0032,Person 032,Small Business,United Kingdom,London,Greater London,2023-11-28
+CUST-0033,Customer 033 Ltd,Small Business,United Kingdom,Glasgow,Scotland,2023-10-19
+CUST-0034,Person 034,Consumer,United Kingdom,Edinburgh,Scotland,2022-06-11
+CUST-0035,Customer 035 Ltd,Small Business,United Kingdom,Glasgow,Scotland,2023-05-28
+CUST-0036,Customer 036 Ltd,Small Business,United Kingdom,Manchester,Greater Manchester,2023-10-03
+CUST-0037,Person 037,Small Business,United Kingdom,Leeds,West Yorkshire,2022-06-06
+CUST-0038,Person 038,Corporate,United Kingdom,London,Greater London,2023-09-06
+CUST-0039,Person 039,Corporate,United Kingdom,Manchester,Greater Manchester,2023-01-07
+CUST-0040,Customer 040 Ltd,Consumer,United Kingdom,Leeds,West Yorkshire,2022-03-01
+CUST-0041,Person 041,Small Business,United Kingdom,Manchester,Greater Manchester,2022-03-29
+CUST-0042,Customer 042 Ltd,Corporate,United Kingdom,Birmingham,West Midlands,2022-05-12
+CUST-0043,Customer 043 Ltd,Small Business,United Kingdom,Birmingham,West Midlands,2022-09-29
+CUST-0044,Customer 044 Ltd,Small Business,United Kingdom,Edinburgh,Scotland,2022-08-05
+CUST-0045,Customer 045 Ltd,Small Business,United Kingdom,Leeds,West Yorkshire,2022-11-16
+CUST-0046,Person 046,Small Business,United Kingdom,Bristol,South West,2023-03-25
+CUST-0047,Customer 047 Ltd,Consumer,United Kingdom,Manchester,Greater Manchester,2022-09-11
+CUST-0048,Person 048,Consumer,United Kingdom,London,Greater London,2023-08-26
+CUST-0049,Customer 049 Ltd,Small Business,United Kingdom,Leeds,West Yorkshire,2022-01-08
+CUST-0050,Person 050,Small Business,United Kingdom,London,Greater London,2022-08-23
+CUST-0051,Person 051,Corporate,United Kingdom,Bristol,South West,2022-03-14
+CUST-0052,Customer 052 Ltd,Consumer,United Kingdom,Liverpool,North West,2022-08-08
+CUST-0053,Customer 053 Ltd,Small Business,United Kingdom,Liverpool,North West,2022-09-06
+CUST-0054,Customer 054 Ltd,Consumer,United Kingdom,Leeds,West Yorkshire,2022-04-07
+CUST-0055,Person 055,Consumer,United Kingdom,Bristol,South West,2023-03-10
+CUST-0056,Customer 056 Ltd,Small Business,United Kingdom,London,Greater London,2023-11-21
+CUST-0057,Customer 057 Ltd,Small Business,United Kingdom,Manchester,Greater Manchester,2022-03-04
+CUST-0058,Customer 058 Ltd,Consumer,United Kingdom,Manchester,Greater Manchester,2022-09-12
+CUST-0059,Person 059,Small Business,United Kingdom,Liverpool,North West,2022-05-24
+CUST-0060,Customer 060 Ltd,Consumer,United Kingdom,Liverpool,North West,2022-09-13
+CUST-0061,Customer 061 Ltd,Corporate,United Kingdom,Liverpool,North West,2023-07-18
+CUST-0062,Person 062,Small Business,United Kingdom,London,Greater London,2022-04-06
+CUST-0063,Customer 063 Ltd,Corporate,United Kingdom,Birmingham,West Midlands,2023-02-21
+CUST-0064,Customer 064 Ltd,Corporate,United Kingdom,Edinburgh,Scotland,2022-03-02
+CUST-0065,Person 065,Corporate,United Kingdom,Edinburgh,Scotland,2022-09-29
+CUST-0066,Customer 066 Ltd,Consumer,United Kingdom,Glasgow,Scotland,2023-03-10
+CUST-0067,Customer 067 Ltd,Small Business,United Kingdom,Liverpool,North West,2022-06-08
+CUST-0068,Person 068,Corporate,United Kingdom,London,Greater London,2023-08-17
+CUST-0069,Customer 069 Ltd,Corporate,United Kingdom,Bristol,South West,2022-02-28
+CUST-0070,Person 070,Consumer,United Kingdom,Birmingham,West Midlands,2022-02-28
+CUST-0071,Customer 071 Ltd,Corporate,United Kingdom,Birmingham,West Midlands,2022-03-12
+CUST-0072,Customer 072 Ltd,Small Business,United Kingdom,Leeds,West Yorkshire,2023-02-18
+CUST-0073,Person 073,Small Business,United Kingdom,Leeds,West Yorkshire,2023-08-16
+CUST-0074,Customer 074 Ltd,Small Business,United Kingdom,Manchester,Greater Manchester,2023-03-06
+CUST-0075,Customer 075 Ltd,Small Business,United Kingdom,Bristol,South West,2022-09-25
+CUST-0076,Person 076,Small Business,United Kingdom,Bristol,South West,2022-09-02
+CUST-0077,Person 077,Corporate,United Kingdom,Glasgow,Scotland,2023-04-14
+CUST-0078,Person 078,Corporate,United Kingdom,London,Greater London,2023-04-15
+CUST-0079,Customer 079 Ltd,Small Business,United Kingdom,Manchester,Greater Manchester,2022-03-17
+CUST-0080,Customer 080 Ltd,Small Business,United Kingdom,Glasgow,Scotland,2022-05-16
+CUST-0081,Customer 081 Ltd,Corporate,United Kingdom,Leeds,West Yorkshire,2023-01-14
+CUST-0082,Person 082,Consumer,United Kingdom,Glasgow,Scotland,2023-09-19
+CUST-0083,Customer 083 Ltd,Small Business,United Kingdom,London,Greater London,2023-11-15
+CUST-0084,Customer 084 Ltd,Consumer,United Kingdom,Manchester,Greater Manchester,2022-05-18
+CUST-0085,Person 085,Corporate,United Kingdom,Birmingham,West Midlands,2022-10-06
+CUST-0086,Person 086,Corporate,United Kingdom,Bristol,South West,2022-07-28
+CUST-0087,Customer 087 Ltd,Consumer,United Kingdom,Liverpool,North West,2022-09-15
+CUST-0088,Customer 088 Ltd,Corporate,United Kingdom,Manchester,Greater Manchester,2023-10-12
+CUST-0089,Customer 089 Ltd,Consumer,United Kingdom,London,Greater London,2022-01-04
+CUST-0090,Person 090,Corporate,United Kingdom,Glasgow,Scotland,2022-06-15
+CUST-0091,Customer 091 Ltd,Small Business,United Kingdom,Edinburgh,Scotland,2023-07-29
+CUST-0092,Person 092,Corporate,United Kingdom,Birmingham,West Midlands,2023-07-13
+CUST-0093,Person 093,Consumer,United Kingdom,Birmingham,West Midlands,2023-03-17
+CUST-0094,Person 094,Consumer,United Kingdom,Bristol,South West,2022-02-10
+CUST-0095,Customer 095 Ltd,Corporate,United Kingdom,Leeds,West Yorkshire,2023-11-14
+CUST-0096,Person 096,Small Business,United Kingdom,Edinburgh,Scotland,2023-09-28
+CUST-0097,Customer 097 Ltd,Corporate,United Kingdom,Birmingham,West Midlands,2022-07-01
+CUST-0098,Customer 098 Ltd,Corporate,United Kingdom,Birmingham,West Midlands,2022-12-07
+CUST-0099,Customer 099 Ltd,Consumer,United Kingdom,Leeds,West Yorkshire,2022-10-01
+CUST-0100,Person 100,Small Business,United Kingdom,Manchester,Greater Manchester,2023-01-27

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.env
+backend/venv/
+backend/uploads/
+uploads/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.DS_Store
+.git/

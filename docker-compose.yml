@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  ai-data-analyst:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dbo-ai-data-analyst
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=gemini-2.5-flash
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped

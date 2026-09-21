@@ -1,0 +1,16 @@
+Product_ID,Product_Name,Category,Cost_Price,List_Price
+PROD-101,Enterprise Server Pro,Technology,1200.0,1899.0
+PROD-102,Cloud Gateway Router,Technology,350.0,599.0
+PROD-103,AI Accelerator Card,Technology,800.0,1450.0
+PROD-104,"Ultra-Wide Monitor 34""",Technology,280.0,450.0
+PROD-105,Mechanical Developer Keyboard,Technology,65.0,129.0
+PROD-201,Ergonomic Desk Mat,Office Supplies,12.0,29.0
+PROD-202,Heavy Duty Shredder,Office Supplies,75.0,140.0
+PROD-203,Wireless Presentation Pointer,Office Supplies,22.0,45.0
+PROD-204,Recycled Copy Paper (Box),Office Supplies,18.0,24.0
+PROD-205,Executive Ballpoint Pen Set,Office Supplies,30.0,60.0
+PROD-301,Standing Desk Electric,Furniture,290.0,520.0
+PROD-302,Ergonomic Mesh Chair,Furniture,180.0,340.0
+PROD-303,Acoustic Privacy Screen,Furniture,95.0,175.0
+PROD-304,Mobile Pedestal File Cabinet,Furniture,60.0,110.0
+PROD-305,Conference Room Table 8ft,Furniture,450.0,850.0
