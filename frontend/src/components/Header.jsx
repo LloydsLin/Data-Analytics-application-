@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Key, Download, RotateCcw, Sparkles, Upload, FileText, CheckCircle2 } from 'lucide-react';
+import { Database, Key, Download, RotateCcw, Sparkles, Upload, FileText, CheckCircle2, Plus } from 'lucide-react';
 
 export default function Header({ 
   tableCount, 
@@ -7,6 +7,7 @@ export default function Header({
   onLoadSample, 
   onOpenApiKey, 
   onOpenQuality, 
+  onOpenExport,
   onReset, 
   loading 
 }) {
@@ -15,7 +16,10 @@ export default function Header({
   const handleExport = async (format) => {
     try {
       setExporting(true);
-      const res = await fetch(`/api/export/report?format=${format}`);
+      const sessionId = localStorage.getItem('dbo_session_id') || 'default';
+      const res = await fetch(`/api/export/report?format=${format}`, {
+        headers: { 'x-session-id': sessionId }
+      });
       if (format === 'markdown') {
         const text = await res.text();
         const blob = new Blob([text], { type: 'text/markdown' });
@@ -44,21 +48,17 @@ export default function Header({
     <header className="app-header">
       <div className="header-left">
         <div className="brand-badge">
-          <Sparkles size={18} />
+          <Sparkles size={16} />
         </div>
         <div className="brand-title">
           Digital Back Office
-          <span className="brand-subtitle">AI Data Analyst</span>
+          <span className="brand-subtitle">AI Analyst</span>
         </div>
 
-        {tableCount > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px' }}>
-            <span className="pulse-indicator" />
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              {tableCount} table{tableCount > 1 ? 's' : ''} active in DuckDB
-            </span>
-          </div>
-        )}
+        <div className="header-status-pill">
+          <span className="pulse-indicator" />
+          <span>{tableCount > 0 ? `DuckDB: ${tableCount} table${tableCount > 1 ? 's' : ''} loaded` : 'DuckDB: Ready'}</span>
+        </div>
       </div>
 
       <div className="header-right">
@@ -73,36 +73,20 @@ export default function Header({
           </button>
         )}
 
-        <button className="btn btn-secondary btn-sm" onClick={onOpenUpload}>
-          <Upload size={14} />
-          Upload CSVs
-        </button>
 
         <button className="btn btn-secondary btn-sm" onClick={onOpenApiKey} title="Configure Gemini API Key">
           <Key size={14} />
           Gemini API Key
         </button>
 
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button 
-            className="btn btn-secondary btn-sm" 
-            onClick={() => handleExport('html')}
-            disabled={exporting}
-            title="Download Executive HTML Report"
-          >
-            <Download size={14} />
-            Export HTML
-          </button>
-          <button 
-            className="btn btn-secondary btn-sm" 
-            onClick={() => handleExport('markdown')}
-            disabled={exporting}
-            title="Download Executive Markdown Report"
-          >
-            <FileText size={14} />
-            Export MD
-          </button>
-        </div>
+        <button 
+          className="btn btn-secondary btn-sm" 
+          onClick={onOpenExport}
+          title="Export official Executive Intelligence Dossier (PDF / HTML / Markdown)"
+        >
+          <Download size={14} color="var(--brand-teal)" />
+          Export Briefing
+        </button>
 
         {tableCount > 0 && (
           <button className="btn btn-ghost btn-sm" onClick={onReset} title="Reset session and clear memory">

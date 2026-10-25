@@ -44,11 +44,11 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveApiKey }) {
             placeholder="AIzaSy..."
             style={{
               width: '100%',
-              background: '#090d15',
+              background: '#f8fafc',
               border: '1px solid var(--border-medium)',
               borderRadius: 'var(--radius-md)',
               padding: '10px 14px',
-              color: '#fff',
+              color: '#121519',
               fontSize: '13px',
               fontFamily: 'var(--font-mono)',
               outline: 'none'
@@ -57,15 +57,15 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveApiKey }) {
         </div>
 
         <div style={{
-          background: 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(48, 186, 186, 0.05)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-sm)',
           padding: '10px 12px',
           fontSize: '11.5px',
-          color: 'var(--text-muted)',
+          color: 'var(--text-secondary)',
           marginBottom: '20px'
         }}>
-          💡 <em>If no key is configured, the application automatically uses its high-fidelity built-in analytical engine to process the benchmark questions and dataset exploration seamlessly.</em>
+          <em>If no key is configured, the application automatically uses its built-in analytical engine to process benchmark questions and dataset exploration.</em>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>

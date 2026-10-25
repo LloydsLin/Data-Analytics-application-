@@ -7,6 +7,8 @@ from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.api.endpoints import router as api_router
+from app.services.data_store import data_store, reset_session_id, set_session_id
+from app.services.demo_bootstrap import bootstrap_demo_data
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,6 +24,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def session_store_context(request, call_next):
+    token = set_session_id(request.headers.get("x-session-id"))
+    try:
+        bootstrap_demo_data(data_store, settings.SAMPLE_DIR)
+        return await call_next(request)
+    finally:
+        reset_session_id(token)
 
 # Include API Router
 app.include_router(api_router, prefix="/api")

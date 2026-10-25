@@ -34,8 +34,8 @@ export default function AnomalyCard({ anomalies }) {
             <div 
               key={idx} 
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(244, 63, 94, 0.2)',
+                background: '#ffffff',
+                border: '1px solid rgba(244, 63, 94, 0.18)',
                 borderRadius: 'var(--radius-sm)',
                 padding: '8px 12px',
                 fontSize: '12px',

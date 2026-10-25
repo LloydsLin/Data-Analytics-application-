@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import duckdb
@@ -20,16 +21,48 @@ class DataStore:
             sanitized = f"t_{sanitized}"
         return sanitized or "table_1"
 
-    def register_csv(self, file_path: Path, custom_table_name: Optional[str] = None) -> str:
+    def register_csv(
+        self,
+        file_path: Path,
+        custom_table_name: Optional[str] = None,
+        max_rows: int = 250_000,
+        max_columns: int = 250,
+    ) -> str:
+        source_name = Path(custom_table_name or file_path.name).name
+        if Path(source_name).suffix.lower() != ".csv":
+            source_name = f"{source_name}.csv"
+        sanitized_target = self._sanitize_table_name(custom_table_name or file_path.name)
+        existing = next(
+            (name for name, meta in self.tables.items()
+             if name == sanitized_target or meta.get("original_filename") in (source_name, file_path.name)),
+            None,
+        )
+        if existing:
+            return existing
+
         table_name = self._sanitize_table_name(custom_table_name or file_path.name)
+
+        # Do not replace an existing table when two uploads have the same stem.
+        base_table_name = table_name
+        suffix = 2
+        while table_name in self.tables:
+            table_name = f"{base_table_name}_{suffix}"
+            suffix += 1
         
         # Load into DuckDB using read_csv_auto
-        query = f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_path}', header=True);"
+        escaped_path = str(file_path).replace("'", "''")
+        query = f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{escaped_path}', header=True, sample_size=-1);"
         self.conn.execute(query)
         
         # Cache metadata
         row_count = self.conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
         col_info = self.conn.execute(f"PRAGMA table_info('{table_name}')").fetchall()
+        if row_count > max_rows or len(col_info) > max_columns:
+            self.conn.execute(f"DROP TABLE {table_name}")
+            raise ValueError(
+                f"CSV exceeds limits (rows={row_count}, columns={len(col_info)}; "
+                f"maximums are {max_rows} rows and {max_columns} columns)."
+            )
         columns = [{"name": c[1], "type": str(c[2]), "nullable": not bool(c[3])} for c in col_info]
         
         # Get sample rows
@@ -59,16 +92,26 @@ class DataStore:
 
     def execute_sql(self, query: str, max_rows: int = 500) -> Dict[str, Any]:
         """Safely execute a SQL query against DuckDB and return records + timing."""
-        clean_query = query.strip().rstrip(";")
-        
-        # Security: Prevent destructive commands
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("A SQL query is required.")
+        clean_query = query.strip()
+        if clean_query.endswith(";"):
+            clean_query = clean_query[:-1].rstrip()
+        if ";" in clean_query or "--" in clean_query or "/*" in clean_query or "*/" in clean_query:
+            raise PermissionError("Only one plain read-only SQL statement is permitted.")
+
+        # DuckDB is deliberately exposed as a read-only analytical surface. An
+        # allowlist at the statement boundary plus blocked file/network functions
+        # prevents mutation and arbitrary file access through SELECT expressions.
+        if not re.match(r"^(SELECT|WITH)\b", clean_query, re.IGNORECASE):
+            raise PermissionError("Only SELECT and WITH queries are permitted.")
         forbidden = [
-            r"\bDROP\b", r"\bDELETE\b", r"\bINSERT\b", r"\bUPDATE\b",
-            r"\bALTER\b", r"\bTRUNCATE\b", r"\bATTACH\b", r"\bCOPY\b\s+.*\bTO\b"
+            r"\b(INSERT|UPDATE|DELETE|MERGE|DROP|CREATE|ALTER|TRUNCATE|ATTACH|DETACH|COPY|EXPORT|IMPORT|INSTALL|LOAD|CALL)\b",
+            r"\b(read_csv|read_csv_auto|read_parquet|parquet_scan|glob|httpfs|sqlite_scan|postgres_scan|mysql_scan)\s*\(",
         ]
-        for pattern in forbidden:
-            if re.search(pattern, clean_query, re.IGNORECASE):
-                raise PermissionError("Destructive or file-export SQL operations are not permitted.")
+        if any(re.search(pattern, clean_query, re.IGNORECASE) for pattern in forbidden):
+            raise PermissionError("Destructive, external-file, or extension SQL operations are not permitted.")
+        max_rows = max(1, min(int(max_rows or 500), 10_000))
         
         start_time = time.perf_counter()
         cursor = self.conn.execute(clean_query)
@@ -104,7 +147,7 @@ class DataStore:
         including relationships, data types, and sample values.
         """
         if not self.tables:
-            return "No datasets currently loaded."
+            return "Demo workspace is initializing."
         
         lines = ["=== AVAILABLE DATABASE TABLES ==="]
         for name, meta in self.tables.items():
@@ -144,4 +187,43 @@ class DataStore:
         self.tables.clear()
         self.file_paths.clear()
 
-data_store = DataStore()
+_session_id: ContextVar[str] = ContextVar("data_store_session_id", default="default")
+
+
+def set_session_id(session_id: Optional[str]):
+    """Set the request-local store key; middleware owns the context lifetime."""
+    return _session_id.set((session_id or "default").strip()[:128] or "default")
+
+
+def reset_session_id(token):
+    _session_id.reset(token)
+
+
+def current_session_id() -> str:
+    return _session_id.get()
+
+
+class SessionDataStoreProxy:
+    """Preserve the existing DataStore API while routing requests by session."""
+
+    def __init__(self):
+        self._stores: Dict[str, DataStore] = {"default": DataStore()}
+
+    def _current(self) -> DataStore:
+        key = _session_id.get()
+        if key not in self._stores:
+            self._stores[key] = DataStore()
+        return self._stores[key]
+
+    def __getattr__(self, name):
+        return getattr(self._current(), name)
+
+    def reset_current(self):
+        key = _session_id.get()
+        current = self._stores.pop(key, None)
+        if current is not None:
+            current.reset()
+        self._stores[key] = DataStore()
+
+
+data_store = SessionDataStoreProxy()

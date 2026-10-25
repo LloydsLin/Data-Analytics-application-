@@ -1,184 +1,111 @@
-import React, { useState, useRef } from 'react';
-import { Upload, X, FileSpreadsheet, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Upload, X, FileSpreadsheet, Loader2, Check, AlertCircle } from 'lucide-react';
+import { apiRequest } from '../lib/api';
+import { inspectCsv, CSV_LIMITS } from '../lib/csv';
+import SimpleDialog from './SimpleDialog';
+import CsvTable from './CsvTable';
 
 export default function FileUploadModal({ isOpen, onClose, onUploadSuccess, onLoadSample }) {
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [active, setActive] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef(null);
-
-  if (!isOpen) return null;
-
-  const handleFiles = (files) => {
+  const [dragOver, setDragOver] = useState(false);
+  const fileInput = useRef(null);
+  const entriesRef = useRef([]);
+  const update = items => { entriesRef.current = items; setEntries(items); };
+  const close = () => {
+    if (uploading) return;
+    update([]); setActive(null); setError(''); onClose();
+  };
+  const addFiles = files => {
+    if (uploading) return;
     setError('');
-    const valid = [];
-    for (const f of files) {
-      if (!f.name.toLowerCase().endsWith('.csv')) {
-        setError(`"${f.name}" is not a CSV file.`);
-        return;
-      }
-      valid.push(f);
+    const next = [...entriesRef.current];
+    const added = [];
+    for (const file of files) {
+      if (next.some(entry => entry.file.name.toLowerCase() === file.name.toLowerCase())) continue;
+      if (next.length >= CSV_LIMITS.files) { setError('Upload up to 10 files at a time.'); break; }
+      const issue = !file.name.toLowerCase().endsWith('.csv') ? 'Choose a CSV file.'
+        : file.size === 0 ? 'This file is empty.'
+        : file.size > CSV_LIMITS.bytes ? 'Use a file smaller than 50 MB.' : '';
+      const entry = { id: crypto.randomUUID(), file, status: issue ? 'error' : 'checking', error: issue };
+      next.push(entry); added.push(entry);
     }
-    setSelectedFiles(prev => [...prev, ...valid]);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    if (e.dataTransfer.files) {
-      handleFiles(Array.from(e.dataTransfer.files));
-    }
-  };
-
-  const removeFile = (idx) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleUploadSubmit = async () => {
-    if (selectedFiles.length === 0) return;
-    setUploading(true);
-    setError('');
-
-    const formData = new FormData();
-    selectedFiles.forEach(f => {
-      formData.append('files', f);
-    });
-
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+    update(next);
+    setActive(previous => previous || next[0]?.id || null);
+    for (const entry of added.filter(item => item.status === 'checking')) {
+      inspectCsv(entry.file).then(preview => {
+        update(entriesRef.current.map(item => item.id === entry.id ? { ...item, preview, status: 'ready' } : item));
+      }).catch(issue => {
+        update(entriesRef.current.map(item => item.id === entry.id ? { ...item, status: 'error', error: issue.message } : item));
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'Upload failed');
-      }
-      const data = await res.json();
-      onUploadSuccess(data.all_tables);
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Error uploading files.');
-    } finally {
-      setUploading(false);
     }
   };
-
+  const remove = id => {
+    const next = entriesRef.current.filter(entry => entry.id !== id);
+    update(next);
+    if (active === id) setActive(next[0]?.id || null);
+  };
+  const submit = async () => {
+    if (!entries.length || entries.some(entry => entry.status !== 'ready') || uploading) return;
+    setUploading(true); setError('');
+    try {
+      const form = new FormData();
+      entries.forEach(entry => form.append('files', entry.file));
+      const data = await apiRequest('/upload', { method: 'POST', body: form });
+      onUploadSuccess(data.all_tables, data.tables, data.message);
+      if (data.errors?.length) {
+        const failed = new Map(data.errors.map(item => [item.filename, item.error]));
+        const next = entriesRef.current.filter(item => failed.has(item.file.name)).map(item => ({ ...item, status: 'error', error: failed.get(item.file.name) }));
+        update(next); setActive(next[0]?.id || null);
+        setError('Some files could not be uploaded.');
+      } else {
+        update([]); setActive(null); onClose();
+      }
+    } catch (issue) { setError(issue.message); }
+    finally { setUploading(false); }
+  };
+  const selected = entries.find(entry => entry.id === active);
+  const ready = entries.length > 0 && entries.every(entry => entry.status === 'ready');
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title">Upload Datasets (CSV)</div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
-
-        {error && (
-          <div style={{
-            background: 'rgba(244, 63, 94, 0.1)',
-            border: '1px solid var(--accent-rose)',
-            color: '#fb7185',
-            padding: '10px 14px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <AlertCircle size={16} />
-            {error}
-          </div>
-        )}
-
-        <div
-          className={`dropzone ${isDragOver ? 'active' : ''}`}
-          onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            multiple
-            accept=".csv"
-            onChange={e => handleFiles(Array.from(e.target.files))}
-          />
-          <Upload size={36} color="var(--accent-indigo)" style={{ margin: '0 auto 12px' }} />
-          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-            Drag & drop your CSV files here
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Supports multi-file uploads (e.g. Sales, Customers, Products) up to 50MB
-          </div>
-        </div>
-
-        {selectedFiles.length > 0 && (
-          <div style={{ marginTop: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Selected Files ({selectedFiles.length}):
-            </div>
-            {selectedFiles.map((file, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background: 'var(--bg-elevated)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '13px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileSpreadsheet size={15} color="var(--accent-indigo)" />
-                  <span>{file.name}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    ({(file.size / 1024).toFixed(1)} KB)
-                  </span>
-                </div>
-                <button 
-                  className="btn btn-ghost btn-sm" 
-                  onClick={() => removeFile(idx)}
-                  style={{ padding: '2px 6px' }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => {
-              onLoadSample();
-              onClose();
-            }}
-          >
-            <Sparkles size={13} color="var(--accent-indigo)" />
-            Load Sample Datasets Instead
-          </button>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleUploadSubmit}
-              disabled={selectedFiles.length === 0 || uploading}
-            >
-              {uploading ? 'Processing...' : `Ingest ${selectedFiles.length} File${selectedFiles.length > 1 ? 's' : ''}`}
-            </button>
-          </div>
-        </div>
+    <SimpleDialog isOpen={isOpen} onClose={close} busy={uploading} labelledBy="upload-title" className="upload-dialog">
+      <div className="modal-header"><h2 id="upload-title">Upload CSV</h2>
+        <button className="btn btn-ghost" onClick={close} disabled={uploading} aria-label="Close upload"><X size={18} /></button>
       </div>
-    </div>
+      <div className="upload-body">
+        {error && <p role="alert" className="inline-error">{error}</p>}
+        <button className={`dropzone upload-dropzone ${dragOver ? 'active' : ''}`} disabled={uploading}
+          onClick={() => fileInput.current?.click()}
+          onDragOver={event => { event.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={event => { event.preventDefault(); setDragOver(false); addFiles(Array.from(event.dataTransfer.files)); }}>
+          <Upload size={24} /><strong>Drop CSV files or browse</strong><span>Up to 10 files · 50 MB each</span>
+        </button>
+        <input ref={fileInput} type="file" multiple accept=".csv,text/csv" hidden onChange={event => {
+          addFiles(Array.from(event.target.files)); event.target.value = '';
+        }} />
+        {entries.length > 0 && <div className="upload-file-list">{entries.map(entry => (
+          <div className={`upload-file ${active === entry.id ? 'selected' : ''}`} key={entry.id}>
+            <button onClick={() => setActive(entry.id)} className="upload-file-select">
+              <FileSpreadsheet size={17} /><span><strong>{entry.file.name}</strong>
+                <small>{entry.error || (entry.preview ? `${entry.preview.rowCount.toLocaleString()} rows · ${entry.preview.columns.length} columns` : 'Checking CSV…')}</small></span>
+              {entry.status === 'ready' ? <Check size={16} /> : entry.status === 'error' ? <AlertCircle size={16} /> : <Loader2 className="animate-spin" size={16} />}
+            </button>
+            <button className="btn btn-ghost" disabled={uploading} onClick={() => remove(entry.id)} aria-label={`Remove ${entry.file.name}`}><X size={15} /></button>
+          </div>
+        ))}</div>}
+        {selected?.preview && <section className="upload-preview-panel" aria-label="File preview">
+          <div className="upload-preview-header">Preview · first {selected.preview.rows.length} rows</div>
+          <CsvTable columns={selected.preview.columns} rows={selected.preview.rows} />
+        </section>}
+      </div>
+      <div className="dialog-footer">
+        <button className="btn btn-ghost" disabled={uploading} onClick={() => { onLoadSample(); close(); }}>Try sample data</button>
+        <button className="btn btn-primary" disabled={!ready || uploading} onClick={submit}>
+          {uploading ? <><Loader2 className="animate-spin" size={14} /> Uploading…</> : `Upload${entries.length ? ` ${entries.length} file${entries.length === 1 ? '' : 's'}` : ''}`}
+        </button>
+      </div>
+    </SimpleDialog>
   );
 }

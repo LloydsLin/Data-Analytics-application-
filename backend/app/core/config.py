@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     DATA_DIR: Path = BASE_DIR / "uploads"
     SAMPLE_DIR: Path = BASE_DIR.parent / "sample_data"
     MAX_FILE_SIZE_MB: int = 50
+    MAX_UPLOAD_FILES: int = 10
+    MAX_CSV_ROWS: int = 250_000
+    MAX_CSV_COLUMNS: int = 250
+    SQL_MAX_ROWS: int = 500
+    SQL_TIMEOUT_SECONDS: float = 5.0
     
     # CORS
     CORS_ORIGINS: list[str] = ["*"]

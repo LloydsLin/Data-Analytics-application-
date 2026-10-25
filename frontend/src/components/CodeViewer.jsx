@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
-import { Code, Table as TableIcon, Copy, Check, Clock, Rows } from 'lucide-react';
+import { Code, Table as TableIcon, Copy, Check, Clock, Play, FileCode, Terminal } from 'lucide-react';
 
-export default function CodeViewer({ sqlQuery, queryResult }) {
+export default function CodeViewer({ 
+  sqlQuery = '', 
+  pandasCode = '', 
+  queryResult = null, 
+  onOpenWorkbench 
+}) {
   const [activeTab, setActiveTab] = useState('sql');
   const [copied, setCopied] = useState(false);
 
-  if (!sqlQuery && (!queryResult || !queryResult.rows)) {
+  if (!sqlQuery && !pandasCode && (!queryResult || !queryResult.rows)) {
     return null;
   }
 
-  const handleCopy = () => {
-    if (!sqlQuery) return;
-    navigator.clipboard.writeText(sqlQuery);
+  const handleCopy = (text) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -23,6 +28,7 @@ export default function CodeViewer({ sqlQuery, queryResult }) {
   return (
     <div className="code-tabs-container">
       <div className="code-tab-bar">
+        {/* Tab 1: DuckDB SQL */}
         {sqlQuery && (
           <button 
             className={`code-tab-btn ${activeTab === 'sql' ? 'active' : ''}`}
@@ -33,13 +39,25 @@ export default function CodeViewer({ sqlQuery, queryResult }) {
           </button>
         )}
 
+        {/* Tab 2: Python Pandas */}
+        {pandasCode && (
+          <button 
+            className={`code-tab-btn ${activeTab === 'pandas' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pandas')}
+          >
+            <FileCode size={13} style={{ display: 'inline', marginRight: '5px' }} />
+            Pandas (Python)
+          </button>
+        )}
+
+        {/* Tab 3: Result Table */}
         {rows.length > 0 && (
           <button 
             className={`code-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
             onClick={() => setActiveTab('table')}
           >
             <TableIcon size={13} style={{ display: 'inline', marginRight: '5px' }} />
-            Result Table ({rows.length})
+            Data Table ({rows.length})
           </button>
         )}
 
@@ -51,25 +69,58 @@ export default function CodeViewer({ sqlQuery, queryResult }) {
             </span>
           )}
 
-          {sqlQuery && activeTab === 'sql' && (
+          {activeTab === 'sql' && sqlQuery && (
+            <>
+              {onOpenWorkbench && (
+                <button 
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => onOpenWorkbench(sqlQuery)}
+                  style={{ padding: '2px 7px', fontSize: '11px', color: 'var(--brand-teal)' }}
+                  title="Open query in interactive SQL workbench"
+                >
+                  <Terminal size={12} />
+                  Workbench
+                </button>
+              )}
+              <button 
+                className="btn btn-ghost btn-sm" 
+                onClick={() => handleCopy(sqlQuery)}
+                style={{ padding: '2px 7px', fontSize: '11px' }}
+              >
+                {copied ? <Check size={12} color="var(--accent-emerald)" /> : <Copy size={12} />}
+                {copied ? 'Copied' : 'Copy SQL'}
+              </button>
+            </>
+          )}
+
+          {activeTab === 'pandas' && pandasCode && (
             <button 
               className="btn btn-ghost btn-sm" 
-              onClick={handleCopy}
-              style={{ padding: '3px 8px', fontSize: '11px' }}
+              onClick={() => handleCopy(pandasCode)}
+              style={{ padding: '2px 7px', fontSize: '11px' }}
             >
               {copied ? <Check size={12} color="var(--accent-emerald)" /> : <Copy size={12} />}
-              {copied ? 'Copied' : 'Copy SQL'}
+              {copied ? 'Copied' : 'Copy Python'}
             </button>
           )}
         </div>
       </div>
 
+      {/* SQL Tab Content */}
       {activeTab === 'sql' && sqlQuery && (
         <pre className="code-content-block">
           <code>{sqlQuery}</code>
         </pre>
       )}
 
+      {/* Pandas Python Tab Content */}
+      {activeTab === 'pandas' && pandasCode && (
+        <pre className="code-content-block">
+          <code>{pandasCode}</code>
+        </pre>
+      )}
+
+      {/* Result Table Tab Content */}
       {activeTab === 'table' && rows.length > 0 && (
         <div className="data-table-wrapper">
           <table className="analytics-table">

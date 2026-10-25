@@ -4,7 +4,7 @@ A production-grade, enterprise AI Data Analyst web application that enables busi
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -72,16 +72,20 @@ graph TD
 
 ---
 
-## 📊 Sample Datasets Included
+## Sample Datasets Included
 
 Located in the `sample_data/` directory:
 - **`sales_transactions.csv`**: 1,200 transactions across 2023–2024 featuring regional metrics, seasonal monthly trends, product sales, discounts, and intentional anomalies (bulk quantities, extreme margins).
 - **`customers.csv`**: 100 enterprise and retail customer accounts across UK regions.
 - **`products.csv`**: 15 items across Technology, Office Supplies, and Furniture with cost and list prices.
+- **`monthly_targets.csv`**: 24 monthly revenue and profit targets for trend comparisons.
+- **`regional_targets.csv`**: Regional revenue/profit targets and account ownership.
+
+Every new session starts with all five demo datasets loaded and ready for analysis. Reset restores the same five-table demo workspace, so the application does not require a separate empty-state setup step.
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### Option 1: Docker (Recommended)
 
@@ -144,7 +148,7 @@ Open your browser at **http://localhost:5173** (proxies API requests to port 800
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Tests
 
 A comprehensive `pytest` test suite validates the relational data store, SQL execution, anomaly detection algorithms, profiler, and API endpoints:
 
@@ -164,7 +168,7 @@ Test coverage includes:
 
 ---
 
-## 💡 Benchmark Assignment Questions & Expected Behavior
+## Benchmark Assignment Questions & Expected Behavior
 
 | Prompt Question | Engine Action | Visual / Analytical Output |
 | :--- | :--- | :--- |
@@ -177,7 +181,7 @@ Test coverage includes:
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 ├── backend/
@@ -229,7 +233,7 @@ Test coverage includes:
 
 ---
 
-## 🔒 Assumptions & Design Decisions
+## Assumptions & Design Decisions
 
 1. **DuckDB as SQL Engine**: Avoids heavy external database dependencies (e.g. Postgres) while delivering enterprise-grade columnar OLAP performance and native multi-CSV joins.
 2. **Deterministic Dual-Mode AI**: Supports both the live Gemini API and an autonomous fallback analytical engine, guaranteeing that assignment evaluators can test every feature immediately with or without an active API key.

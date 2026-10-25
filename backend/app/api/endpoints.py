@@ -1,13 +1,16 @@
 import os
+import re
 import shutil
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, Header, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import settings
-from app.services.data_store import data_store
+from app.services.data_store import current_session_id, data_store
+from app.services.demo_bootstrap import DEMO_FILES, bootstrap_demo_data
 from app.services.profiler import profiler
 from app.services.anomaly_engine import anomaly_engine
 from app.services.gemini_agent import gemini_agent
@@ -17,22 +20,28 @@ from app.services.logger import audit_logger
 
 router = APIRouter()
 
-# In-memory session history for export
-session_history: List[Dict[str, Any]] = []
+# In-memory session history for export. Dataset isolation remains a follow-up
+# because the analytical services currently share one DuckDB store.
+session_histories: Dict[str, List[Dict[str, Any]]] = {}
+
+
+def _history_for(session_id: Optional[str]) -> List[Dict[str, Any]]:
+    key = (session_id or "default").strip()[:128] or "default"
+    return session_histories.setdefault(key, [])
 
 class ChatRequest(BaseModel):
-    question: str
-    chat_history: Optional[List[Dict[str, str]]] = None
+    question: str = Field(..., min_length=2, max_length=2_000)
+    chat_history: Optional[List[Dict[str, str]]] = Field(default=None, max_length=20)
     api_key: Optional[str] = None
 
 class SqlRequest(BaseModel):
-    query: str
-    max_rows: Optional[int] = 500
+    query: str = Field(..., min_length=1, max_length=20_000)
+    max_rows: Optional[int] = Field(default=500, ge=1, le=10_000)
 
 class AnomalyRequest(BaseModel):
     table_name: Optional[str] = None
     column: Optional[str] = None
-    method: Optional[str] = "iqr"  # iqr, zscore, isolation_forest
+    method: Optional[str] = Field(default="iqr", pattern="^(iqr|zscore|isolation_forest)$")
 
 class ForecastRequest(BaseModel):
     table_name: Optional[str] = None
@@ -52,24 +61,45 @@ def health_check():
 @router.post("/upload")
 async def upload_csv_files(files: List[UploadFile] = File(...)):
     """Upload and validate one or more CSV files into DuckDB."""
+    if not files or len(files) > settings.MAX_UPLOAD_FILES:
+        raise HTTPException(status_code=400, detail=f"Upload between 1 and {settings.MAX_UPLOAD_FILES} CSV files.")
     uploaded_tables = []
     
     for file in files:
-        if not file.filename.lower().endswith(".csv"):
+        original_name = Path(file.filename or "").name
+        if not original_name or not original_name.lower().endswith(".csv"):
             raise HTTPException(status_code=400, detail=f"File '{file.filename}' is not a CSV file.")
-            
-        saved_path = settings.DATA_DIR / file.filename
+        safe_name = re.sub(r"[^A-Za-z0-9_.-]", "_", original_name)
+        saved_path = settings.DATA_DIR / f"{uuid.uuid4().hex}_{safe_name}"
+        bytes_written = 0
         try:
             with open(saved_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+                while chunk := await file.read(1024 * 1024):
+                    bytes_written += len(chunk)
+                    if bytes_written > settings.MAX_FILE_SIZE_MB * 1024 * 1024:
+                        raise ValueError(f"File exceeds the {settings.MAX_FILE_SIZE_MB} MB limit.")
+                    buffer.write(chunk)
+            if bytes_written == 0:
+                raise ValueError("File is empty.")
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to save file '{file.filename}': {e}")
+            saved_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail=f"Invalid upload '{original_name}': {e}")
             
         try:
-            table_name = data_store.register_csv(saved_path)
+            table_name = data_store.register_csv(
+                saved_path,
+                custom_table_name=original_name,
+                max_rows=settings.MAX_CSV_ROWS,
+                max_columns=settings.MAX_CSV_COLUMNS,
+            )
+            existing_path = data_store.file_paths.get(table_name)
+            if existing_path and existing_path != saved_path:
+                saved_path.unlink(missing_ok=True)
             table_meta = data_store.get_table_info(table_name)
+            table_meta["original_filename"] = original_name
             uploaded_tables.append(table_meta)
         except Exception as e:
+            saved_path.unlink(missing_ok=True)
             raise HTTPException(status_code=400, detail=f"Failed to ingest CSV '{file.filename}': {e}")
             
     return {
@@ -80,28 +110,10 @@ async def upload_csv_files(files: List[UploadFile] = File(...)):
 
 @router.post("/load-sample")
 def load_sample_datasets():
-    """Load bundled sample datasets (Sales, Customers, Products) for instant demonstration."""
-    sample_files = [
-        ("sales_transactions.csv", "sales_transactions"),
-        ("customers.csv", "customers"),
-        ("products.csv", "products")
-    ]
-    
-    loaded = []
-    for filename, table_alias in sample_files:
-        path = settings.SAMPLE_DIR / filename
-        if not path.exists():
-            # Fallback path check
-            alt_path = Path.cwd() / "sample_data" / filename
-            if alt_path.exists():
-                path = alt_path
-                
-        if path.exists():
-            t_name = data_store.register_csv(path, custom_table_name=table_alias)
-            loaded.append(data_store.get_table_info(t_name))
-            
+    """Restore the five bundled demo datasets for the current session."""
+    loaded = bootstrap_demo_data(data_store, settings.SAMPLE_DIR)
     if not loaded:
-        raise HTTPException(status_code=404, detail="Sample datasets not found on disk.")
+        raise HTTPException(status_code=500, detail="Bundled demo datasets are unavailable.")
         
     return {
         "message": f"Successfully loaded {len(loaded)} sample datasets.",
@@ -117,6 +129,24 @@ def list_datasets():
         "schema_summary": data_store.get_schema_summary_for_llm()
     }
 
+@router.get("/datasets/{table_name}/preview")
+def preview_dataset(table_name: str, limit: int = Query(50, ge=1, le=200)):
+    """Return a bounded, read-only preview of one registered dataset."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", table_name):
+        raise HTTPException(status_code=400, detail="Invalid table name.")
+    if not data_store.get_table_info(table_name):
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' does not exist.")
+    try:
+        result = data_store.execute_sql(f"SELECT * FROM {table_name} LIMIT {limit}", max_rows=limit)
+        return {
+            "table_name": table_name,
+            "columns": result["columns"],
+            "rows": result["rows"],
+            "row_count": data_store.get_table_info(table_name)["row_count"],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/quality/{table_name}")
 def get_data_quality(table_name: str):
     """Deep data quality audit on specified table."""
@@ -131,7 +161,8 @@ def get_data_quality(table_name: str):
 @router.post("/chat")
 def chat_with_data(
     req: ChatRequest,
-    x_gemini_api_key: Optional[str] = Header(None)
+    x_gemini_api_key: Optional[str] = Header(None),
+    x_session_id: Optional[str] = Header(None),
 ):
     """Natural language query answering, reasoning, SQL generation, and chart synthesis."""
     effective_key = req.api_key or x_gemini_api_key
@@ -142,7 +173,7 @@ def chat_with_data(
     )
     
     # Record in session history
-    session_history.append({
+    _history_for(x_session_id).append({
         "question": req.question,
         "response": response
     })
@@ -152,9 +183,10 @@ def chat_with_data(
 @router.post("/anomalies")
 def detect_anomalies(req: AnomalyRequest):
     """Execute anomaly detection using IQR, Z-Score, or Isolation Forest."""
+    bootstrap_demo_data(data_store, settings.SAMPLE_DIR)
     tables = list(data_store.tables.keys())
     if not tables:
-        raise HTTPException(status_code=400, detail="No datasets loaded.")
+        raise HTTPException(status_code=503, detail="Demo workspace is still initializing.")
         
     t_name = req.table_name or tables[0]
     try:
@@ -189,28 +221,33 @@ def run_sql(req: SqlRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/export/report")
-def export_report(format: str = Query("html", pattern="^(html|markdown)$")):
+def export_report(
+    format: str = Query("html", pattern="^(html|markdown)$"),
+    x_session_id: Optional[str] = Header(None),
+):
     """Export current session findings as an executive report."""
     if format == "markdown":
-        md = exporter.generate_markdown_report(session_history)
+        md = exporter.generate_markdown_report(_history_for(x_session_id))
         return PlainTextResponse(content=md, media_type="text/markdown")
     else:
-        html = exporter.generate_html_report(session_history)
+        html = exporter.generate_html_report(_history_for(x_session_id))
         return HTMLResponse(content=html)
 
 @router.post("/reset")
 def reset_session():
     """Clear in-memory tables and session history."""
-    data_store.reset()
-    session_history.clear()
-    return {"message": "Session and datasets successfully reset."}
+    data_store.reset_current()
+    session_histories.pop(current_session_id(), None)
+    loaded = bootstrap_demo_data(data_store, settings.SAMPLE_DIR)
+    return {"message": "Demo session restored.", "tables": loaded}
 
 @router.get("/dashboard")
 def get_executive_dashboard():
     """Return comprehensive corporate KPI metrics and visual breakdowns for executive dashboard."""
+    bootstrap_demo_data(data_store, settings.SAMPLE_DIR)
     tables = list(data_store.tables.keys())
     if not tables:
-        return {"loaded": False, "message": "No datasets currently active."}
+        return {"loaded": False, "message": "Demo workspace is still initializing."}
 
     sales_tbl = next((t for t in tables if "sale" in t), tables[0])
     cust_tbl = next((t for t in tables if "cust" in t), None)
@@ -293,9 +330,10 @@ def get_executive_dashboard():
 @router.post("/forecast")
 def run_forecast(req: ForecastRequest):
     """Execute predictive forecasting on selected table and metric."""
+    bootstrap_demo_data(data_store, settings.SAMPLE_DIR)
     tables = list(data_store.tables.keys())
     if not tables:
-        raise HTTPException(status_code=400, detail="No datasets loaded.")
+        raise HTTPException(status_code=503, detail="Demo workspace is still initializing.")
 
     t_name = req.table_name or next((t for t in tables if "sale" in t), tables[0])
     df = data_store.get_dataframe(t_name)

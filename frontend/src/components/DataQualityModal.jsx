@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, AlertCircle, CheckCircle2, FileSpreadsheet, HardDrive, Copy } from 'lucide-react';
 
-export default function DataQualityModal({ isOpen, onClose, tables }) {
-  const [selectedTable, setSelectedTable] = useState(tables[0]?.table_name || '');
+export default function DataQualityModal({ isOpen, onClose, tables, selectedTable: activeTable }) {
+  const [selectedTable, setSelectedTable] = useState(activeTable || tables[0]?.table_name || '');
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (activeTable && tables.some(table => table.table_name === activeTable)) {
+      setSelectedTable(activeTable);
+      return;
+    }
     if (tables.length > 0 && !selectedTable) {
       setSelectedTable(tables[0].table_name);
     }
-  }, [tables]);
+  }, [activeTable, tables, selectedTable]);
 
   useEffect(() => {
     if (!isOpen || !selectedTable) return;
@@ -20,7 +24,9 @@ export default function DataQualityModal({ isOpen, onClose, tables }) {
   const fetchQuality = async (tableName) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/quality/${tableName}`);
+      const res = await fetch(`/api/quality/${tableName}`, {
+        headers: { 'x-session-id': localStorage.getItem('dbo_session_id') || 'default' }
+      });
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
@@ -148,10 +154,11 @@ export default function DataQualityModal({ isOpen, onClose, tables }) {
                       <td>
                         <span style={{
                           fontSize: '11px',
-                          background: c.type === 'numeric' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                          color: c.type === 'numeric' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                          background: c.type === 'numeric' ? 'rgba(48, 186, 186, 0.1)' : '#f1f5f9',
+                          color: c.type === 'numeric' ? 'var(--brand-teal)' : 'var(--text-secondary)',
                           padding: '2px 6px',
-                          borderRadius: '4px'
+                          borderRadius: '4px',
+                          fontWeight: 600
                         }}>
                           {c.type}
                         </span>

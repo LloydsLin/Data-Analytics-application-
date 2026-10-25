@@ -19,7 +19,9 @@ export default function DashboardView({ onLoadSample, tableCount }) {
     if (tableCount === 0) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/dashboard');
+      const res = await fetch('/api/dashboard', {
+        headers: { 'x-session-id': localStorage.getItem('dbo_session_id') || 'default' }
+      });
       if (res.ok) {
         const data = await res.json();
         setDashboardData(data);
@@ -47,7 +49,7 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         textAlign: 'center'
       }}>
         <div style={{
-          background: 'rgba(99, 102, 241, 0.1)',
+          background: 'rgba(48, 186, 186, 0.1)',
           borderRadius: '50%',
           width: '64px',
           height: '64px',
@@ -56,9 +58,9 @@ export default function DashboardView({ onLoadSample, tableCount }) {
           justifyContent: 'center',
           marginBottom: '16px'
         }}>
-          <Sparkles size={32} color="var(--accent-indigo)" />
+          <Sparkles size={32} color="var(--brand-teal)" />
         </div>
-        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', marginBottom: '8px' }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', marginBottom: '8px', color: 'var(--brand-teal)' }}>
           No Active Datasets Loaded
         </h2>
         <p style={{ color: 'var(--text-muted)', maxWidth: '420px', marginBottom: '24px', fontSize: '13.5px' }}>
@@ -88,7 +90,7 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         x: regional.map(r => r.Region),
         y: regional.map(r => r.Revenue),
         type: 'bar',
-        marker: { color: '#6366f1' }
+        marker: { color: '#30baba' }
       },
       {
         name: 'Profit (£)',
@@ -111,10 +113,10 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         y: monthly.map(m => m.Revenue),
         type: 'scatter',
         mode: 'lines+markers',
-        line: { color: '#6366f1', width: 3 },
-        marker: { size: 6, color: '#818cf8' },
+        line: { color: '#30baba', width: 2.5 },
+        marker: { size: 6, color: '#269d9d' },
         fill: 'tozeroy',
-        fillcolor: 'rgba(99, 102, 241, 0.08)'
+        fillcolor: 'rgba(48, 186, 186, 0.08)'
       }
     ]
   };
@@ -129,7 +131,7 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         x: customers.map(c => c.Customer),
         y: customers.map(c => c.Revenue),
         type: 'bar',
-        marker: { color: '#8b5cf6' }
+        marker: { color: '#06b6d4' }
       }
     ]
   };
@@ -145,7 +147,7 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         values: categories.map(c => c.Revenue),
         hole: 0.4,
         marker: {
-          colors: ['#6366f1', '#10b981', '#f59e0b', '#06b6d4', '#ec4899']
+          colors: ['#30baba', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6']
         }
       }
     ]
@@ -171,42 +173,42 @@ export default function DashboardView({ onLoadSample, tableCount }) {
       </div>
 
       {/* KPI Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
         {/* Total Revenue */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.88)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textTransform: 'uppercase' }}>Total Revenue</span>
-            <DollarSign size={16} color="var(--accent-indigo)" />
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--brand-teal)' }}>Total Revenue</span>
+            <DollarSign size={15} color="var(--brand-teal)" />
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: '#f8fafc' }}>
+          <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '6px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             £{(kpis.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
             <TrendingUp size={12} /> Top-line volume
           </div>
         </div>
 
         {/* Total Profit */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.88)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textTransform: 'uppercase' }}>Net Profit</span>
-            <TrendingUp size={16} color="var(--accent-emerald)" />
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--brand-teal)' }}>Net Profit</span>
+            <TrendingUp size={15} color="var(--accent-emerald)" />
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: '#10b981' }}>
+          <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '6px', color: '#10b981', letterSpacing: '-0.02em' }}>
             £{(kpis.total_profit || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Margin: <strong>{kpis.profit_margin_pct ?? 0}%</strong>
+            Margin: <strong style={{ color: 'var(--text-primary)' }}>{kpis.profit_margin_pct ?? 0}%</strong>
           </div>
         </div>
 
         {/* Total Orders */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.88)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textTransform: 'uppercase' }}>Total Orders</span>
-            <ShoppingCart size={16} color="var(--accent-cyan)" />
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--brand-teal)' }}>Total Orders</span>
+            <ShoppingCart size={15} color="var(--brand-teal)" />
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: '#f8fafc' }}>
+          <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '6px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             {(kpis.total_orders || 0).toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -215,12 +217,12 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         </div>
 
         {/* Average Order Value */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.88)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textTransform: 'uppercase' }}>Avg Order Value</span>
-            <Percent size={16} color="var(--accent-amber)" />
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--brand-teal)' }}>Avg Order Value</span>
+            <Percent size={15} color="var(--accent-amber)" />
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: '#f8fafc' }}>
+          <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '6px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             £{(kpis.avg_order_value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -229,15 +231,15 @@ export default function DashboardView({ onLoadSample, tableCount }) {
         </div>
 
         {/* Anomalies Flagged */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.88)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '16px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textTransform: 'uppercase' }}>Anomalies Flagged</span>
-            <AlertTriangle size={16} color="var(--accent-rose)" />
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-rose)' }}>Anomalies Flagged</span>
+            <AlertTriangle size={15} color="var(--accent-rose)" />
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 700, marginTop: '8px', color: '#fb7185' }}>
+          <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '6px', color: 'var(--accent-rose)', letterSpacing: '-0.02em' }}>
             {kpis.anomaly_count || 0}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--accent-rose)', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--accent-rose)', marginTop: '4px', fontWeight: 600 }}>
             IQR outliers detected
           </div>
         </div>

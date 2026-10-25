@@ -49,3 +49,24 @@ def test_destructive_sql_rejection(store):
 
     with pytest.raises(PermissionError):
         store.execute_sql("DELETE FROM sales WHERE Quantity > 5;")
+
+    with pytest.raises(PermissionError):
+        store.execute_sql("SELECT 1; SELECT 2;")
+
+    with pytest.raises(PermissionError):
+        store.execute_sql("SELECT read_csv_auto('secret.csv');")
+
+    with pytest.raises(PermissionError):
+        store.execute_sql("PRAGMA enable_profiling='json';")
+
+
+def test_duplicate_csv_files_reuse_existing_table(store):
+    sample_dir = Path(__file__).resolve().parent.parent / "sample_data"
+    table_name = store.register_csv(sample_dir / "sales_transactions.csv", "sales")
+    assert table_name == "sales"
+    assert len(store.list_tables()) == 3
+
+
+def test_sql_result_limit_is_bounded(store):
+    result = store.execute_sql("SELECT * FROM sales", max_rows=10_000_000)
+    assert result["displayed_rows"] <= 10_000

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { X, Play, Code, Clock, Table, AlertCircle } from 'lucide-react';
 
-export default function SqlPlaygroundModal({ isOpen, onClose, tables }) {
+export default function SqlPlaygroundModal({ isOpen, onClose, tables, selectedTable }) {
   const defaultQuery = tables.length > 0 
-    ? `SELECT * FROM ${tables[0].table_name} LIMIT 10;`
+    ? `SELECT * FROM ${selectedTable || tables[0].table_name} LIMIT 10;`
     : `SELECT 1 AS test;`;
 
   const [sql, setSql] = useState(defaultQuery);
@@ -22,7 +22,10 @@ export default function SqlPlaygroundModal({ isOpen, onClose, tables }) {
     try {
       const res = await fetch('/api/sql/execute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-id': localStorage.getItem('dbo_session_id') || 'default'
+        },
         body: JSON.stringify({ query: sql })
       });
       const data = await res.json();
@@ -40,7 +43,7 @@ export default function SqlPlaygroundModal({ isOpen, onClose, tables }) {
   const sampleQueries = [
     {
       label: "Regional Summary",
-      query: `SELECT Region, COUNT(*) AS Orders, ROUND(SUM(Revenue), 2) AS Revenue FROM ${tables[0]?.table_name || 'sales'} GROUP BY Region ORDER BY Revenue DESC;`
+      query: `SELECT * FROM ${selectedTable || tables[0]?.table_name || 'sales'} LIMIT 10;`
     },
     {
       label: "Top 5 Customers Join",
@@ -94,11 +97,11 @@ export default function SqlPlaygroundModal({ isOpen, onClose, tables }) {
             style={{
               width: '100%',
               height: '110px',
-              background: '#090d15',
+              background: '#f8fafc',
               border: '1px solid var(--border-medium)',
               borderRadius: 'var(--radius-md)',
               padding: '12px',
-              color: '#f8fafc',
+              color: '#121519',
               fontFamily: 'var(--font-mono)',
               fontSize: '13px',
               outline: 'none',
